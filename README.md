@@ -1,5 +1,5 @@
-# docker
-docker course
+# docker course
+Dockerize an image from node application
 
 # Create image:
 docker build -t appjs:1.0 .
