@@ -1,0 +1,92 @@
+version: '3'
+services: 
+    app:
+        image: appjs:compose
+        container_name: appjs_container
+        build: 
+            context: .
+            dockerfile: multistage.Dockerfile
+        ports:
+            - 3000   
+        volumes: 
+            - app_volume
+        networks:   
+            - projectnet
+    
+    sonarqube:
+        image: "sonarqube:latest"
+        container_name: sonarqube_container
+        depends_on:
+            - database
+        ports:
+            - 9000:9000
+        restart: always
+        environment:
+            - SONAR_JDBC_URL=jdbc:postgresql://postgresql:5432/sonarqube-db
+            - SONAR_JDBC_USERNAME=sonaradmin
+            - SONAR_JDBC_PASSWORD=sonarpassword
+        volumes:
+            - sonarqube_data_volume:/opt/sonarqube/data
+            - sonarqube_extensions_volume:/opt/sonarqube/extensions
+            - sonarqube_logs_volume:/opt/sonarqube/logs
+        networks:
+            - projectnet
+
+    database:
+        image: "postgres:latest"
+        container_name: postgresql_container
+        restart: always
+        environment:
+            - POSTGRES_USER=sonaradmin
+            - POSTGRES_PASSWORD=sonarpassword            
+        volumes:    
+            - postgres_data_volume:/var/lib/postgresql/data
+        networks:
+            - projectnet 
+
+    jenkins:
+        image: "jenkins/jenkins"
+        container_name: jenkins_container
+        ports:
+            - 8085:8085
+            - 50000:50000
+        volumes:
+            - jenkins_volume:/var/jenkins_home
+        networks:
+            - projectnet
+
+    nexus:
+        image: "sonatype/nexus3"
+        container_name: nexus_container
+        ports:
+        - 8081:8081
+        restart: always 
+        volumes:
+        - sonatype_volume:/nexus-data
+        networks:
+        - projectnet
+
+    portainer:
+        image: "portainer/portainer"
+        container_name: portainer_container
+        ports:
+            - 8080:9000           
+        restart: always     
+        volumes:    
+            - portainer_volume:/data
+        networks:
+            - projectnet        
+
+volumes:
+    postgres_data_volume:
+    sonarqube_data_volume:
+    sonarqube_logs_volume:
+    sonarqube_extensions_volume:
+    jenkins_volume:
+    sonatype_volume:
+    portainer_volume:
+    app_volume:
+
+networks: 
+    projectnet:
+        driver: bridge
